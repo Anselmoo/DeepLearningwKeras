@@ -19,7 +19,7 @@ def vectorize_sequences(sequences, dimension=10000):
     return results
 
 
-def train():
+def get_dataset():
     (train_data, train_labels), (test_data, test_labels) = imdb.load_data(
         num_words=10000
     )
@@ -34,7 +34,7 @@ def train():
     return (x_train, y_train), (x_test, y_test)
 
 
-def train_models():
+def build_network():
     # Model section
     model = models.Sequential()
     model.add(layers.Dense(16, activation="relu", input_shape=(10000,)))
@@ -111,8 +111,8 @@ def learning_evaluation(x_train, y_train, x_test, y_test):
 
 if __name__ == "__main__":
     print(keras.__version__)
-    train, test = train()
-    model = train_models()
+    train, test = get_dataset()
+    model = build_network()
     train_validation(x_train=train[0], y_train=train[1], model=model)
     learning_evaluation(
         x_train=train[0], y_train=train[1], x_test=test[0], y_test=test[1]
