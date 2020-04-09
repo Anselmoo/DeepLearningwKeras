@@ -1,12 +1,14 @@
 import keras
-
-print(keras.__version__)
-
-import keras
 from keras import layers
-import numpy as np
 from keras.preprocessing import image
 
+import os
+import numpy as np
+from tqdm import tqdm
+
+import matplotlib.pyplot as plt
+
+print(keras.__version__)
 # Global variables
 latent_dim = 32
 height = 32
@@ -40,26 +42,26 @@ def generator_input():
     x = layers.Conv2D(channels, 7, activation="tanh", padding="same")(x)
     generator = keras.models.Model(generator_input, x)
     generator.summary()
-    return generator, x
+    return generator
 
 
-def discriminator_input(x):
+def discriminator_input():
     discriminator_input = layers.Input(shape=(height, width, channels))
-    layers.Conv2D(128, 3)(discriminator_input)
-    layers.LeakyReLU()(x)
-    layers.Conv2D(128, 4, strides=2)(x)
-    layers.LeakyReLU()(x)
-    layers.Conv2D(128, 4, strides=2)(x)
-    layers.LeakyReLU()(x)
-    layers.Conv2D(128, 4, strides=2)(x)
-    layers.LeakyReLU()(x)
-    layers.Flatten()(x)
+    x = layers.Conv2D(128, 3)(discriminator_input)
+    x = layers.LeakyReLU()(x)
+    x = layers.Conv2D(128, 4, strides=2)(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.Conv2D(128, 4, strides=2)(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.Conv2D(128, 4, strides=2)(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.Flatten()(x)
 
     # One dropout layer - important trick!
-    layers.Dropout(0.4)(x)
+    x = layers.Dropout(0.4)(x)
 
     # Classification layer
-    layers.Dense(1, activation="sigmoid")(x)
+    x = layers.Dense(1, activation="sigmoid")(x)
 
     discriminator = keras.models.Model(discriminator_input, x)
     discriminator.summary()
@@ -73,7 +75,7 @@ def discriminator_input(x):
     return discriminator
 
 
-def gans_init(discriminator, generator):
+def gan_init(discriminator, generator):
     # Set discriminator weights to non-trainable
     # (will only apply to the `gan` model)
     discriminator.trainable = False
@@ -84,8 +86,97 @@ def gans_init(discriminator, generator):
 
     gan_optimizer = keras.optimizers.RMSprop(lr=0.0004, clipvalue=1.0, decay=1e-8)
     gan.compile(optimizer=gan_optimizer, loss="binary_crossentropy")
+    return gan
+
+
+def gan_generation(gan, iterations=1000, batch_size=20):
+    # Load CIFAR10 data
+    (x_train, y_train), (_, _) = keras.datasets.cifar10.load_data()
+
+    # Select frog images (class 6)
+    x_train = x_train[y_train.flatten() == 6]
+
+    # Normalize data
+    x_train = (
+        x_train.reshape((x_train.shape[0],) + (height, width, channels)).astype(
+            "float32"
+        )
+        / 255.0
+    )
+
+    save_dir = os.getcwd()
+
+    # Start training loop
+    start = 0
+    for step in tqdm(range(iterations)):
+        # Sample random points in the latent space
+        random_latent_vectors = np.random.normal(size=(batch_size, latent_dim))
+
+        # Decode them to fake images
+        generated_images = generator.predict(random_latent_vectors)
+
+        # Combine them with real images
+        stop = start + batch_size
+        real_images = x_train[start:stop]
+        combined_images = np.concatenate([generated_images, real_images])
+
+        # Assemble labels discriminating real from fake images
+        labels = np.concatenate([np.ones((batch_size, 1)), np.zeros((batch_size, 1))])
+        # Add random noise to the labels - important trick!
+        labels += 0.05 * np.random.random(labels.shape)
+
+        # Train the discriminator
+        d_loss = discriminator.train_on_batch(combined_images, labels)
+
+        # sample random points in the latent space
+        random_latent_vectors = np.random.normal(size=(batch_size, latent_dim))
+
+        # Assemble labels that say "all real images"
+        misleading_targets = np.zeros((batch_size, 1))
+
+        # Train the generator (via the gan model,
+        # where the discriminator weights are frozen)
+        a_loss = gan.train_on_batch(random_latent_vectors, misleading_targets)
+
+        start += batch_size
+        if start > len(x_train) - batch_size:
+            start = 0
+
+        # Occasionally save / plot
+        if step % 100 == 0:
+            # Save model weights
+            gan.save_weights("gan.h5")
+
+            # Print metrics
+            print("discriminator loss at step %s: %s" % (step, d_loss))
+            print("adversarial loss at step %s: %s" % (step, a_loss))
+
+            # Save one generated image
+            img = image.array_to_img(generated_images[0] * 255.0, scale=False)
+            img.save(os.path.join(save_dir, "generated_frog" + str(step) + ".png"))
+
+            # Save one real image, for comparison
+            img = image.array_to_img(real_images[0] * 255.0, scale=False)
+            img.save(os.path.join(save_dir, "real_frog" + str(step) + ".png"))
+
+
+def verify_plots(generator):
+    # Sample random points in the latent space
+    random_latent_vectors = np.random.normal(size=(10, latent_dim))
+
+    # Decode them to fake images
+    generated_images = generator.predict(random_latent_vectors)
+
+    for i in range(generated_images.shape[0]):
+        img = image.array_to_img(generated_images[i] * 255.0, scale=False)
+        plt.figure()
+        plt.imshow(img)
+    plt.show()
 
 
 if __name__ == "__main__":
-    generator, x = generator_input()
-    discriminator = discriminator_input(x)
+    generator = generator_input()
+    discriminator = discriminator_input()
+    gan = gan_init(discriminator, generator)
+    gan_generation(gan)
+    verify_plots(generator)
