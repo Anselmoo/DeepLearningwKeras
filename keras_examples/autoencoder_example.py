@@ -157,4 +157,3 @@ if __name__ == "__main__":
     y = CustomVariationalLayer()([input_img, z_decoded])
     autoencoder_train(input_img, y)
     verify_plots(decoder=decoder)
- 
