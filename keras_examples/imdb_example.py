@@ -1,3 +1,4 @@
+import keras
 from keras.datasets import imdb
 from keras import models
 from keras import layers
@@ -7,8 +8,6 @@ from keras import metrics
 
 import numpy as np
 import matplotlib.pyplot as plt
-
-import keras
 
 
 def vectorize_sequences(sequences, dimension=10000):

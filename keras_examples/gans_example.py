@@ -4,11 +4,10 @@ from keras.preprocessing import image
 
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
 
-print(keras.__version__)
 # Global variables
 latent_dim = 32
 height = 32
@@ -175,6 +174,7 @@ def verify_plots(generator):
 
 
 if __name__ == "__main__":
+    print(keras.__version__)
     generator = generator_input()
     discriminator = discriminator_input()
     gan = gan_init(discriminator, generator)
