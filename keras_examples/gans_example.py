@@ -88,7 +88,7 @@ def gan_init(discriminator, generator):
     return gan
 
 
-def gan_generation(gan, iterations=1000, batch_size=20):
+def gan_train(gan, iterations=1000, batch_size=20):
     # Load CIFAR10 data
     (x_train, y_train), (_, _) = keras.datasets.cifar10.load_data()
 
@@ -178,5 +178,5 @@ if __name__ == "__main__":
     generator = generator_input()
     discriminator = discriminator_input()
     gan = gan_init(discriminator, generator)
-    gan_generation(gan)
+    gan_train(gan)
     verify_plots(generator)

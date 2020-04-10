@@ -7,6 +7,7 @@ from keras.utils.np_utils import to_categorical
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def vectorize_sequences(sequences, dimension=10000):
     results = np.zeros((len(sequences), dimension))
     for i, sequence in enumerate(sequences):
@@ -68,7 +69,7 @@ def train_validation(x_train, y_train, model):
         batch_size=512,
         validation_data=(x_val, y_val),
     )
-    
+
     acc = history.history["accuracy"]
     val_acc = history.history["val_accuracy"]
     loss = history.history["loss"]
