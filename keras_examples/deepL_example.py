@@ -173,7 +173,7 @@ def deepL_image_generator(fetch_loss_and_grads):
 if __name__ == "__main__":
     import urllib.request
 
-    url = "https://images.assetsdelivery.com/compings_v2/gubh83/gubh831506/gubh83150600013.jpg"
+    url = "https://....jpg"
     urllib.request.urlretrieve(url, "local-filename.jpg")
     model, loss = init_setup()
     fetch_loss_and_grads = gradient_setup(model, loss)
