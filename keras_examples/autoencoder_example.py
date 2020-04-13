@@ -43,7 +43,7 @@ def sampling(args, latent_dim=2):
 def decoder_input(z, shape_before_flattening):
 
     # This is the input where we will feed `z`.
-    # print(z.output_shape)
+
     decoder_input = layers.Input(shape=K.int_shape(z)[1:])
 
     # Upsample to the correct number of units
